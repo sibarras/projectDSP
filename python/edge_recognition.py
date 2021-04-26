@@ -19,7 +19,7 @@ def edge_recognition(image_path:Path, image:np.ndarray, results_path: Path = Pat
     remove(bmp_path)
 
     # Aplicacion de laplaciano para extraccion de bordes
-    bw2 = cv2.Canny(bmp_image, 0.01, 0.6)
+    bw2:np.ndarray = cv2.Canny(bmp_image, 0.01, 0.6)
 
     # Obtener Bordes de la imagen
     bmp_grayscale = sum(bmp_image[:,:,i] for i in range(3))/3 
@@ -28,18 +28,20 @@ def edge_recognition(image_path:Path, image:np.ndarray, results_path: Path = Pat
 
     # Binarizamos para tener el contorno de la imagen
     ret, threshold = cv2.threshold(spec_img, 50, 255, 0)
-    img = threshold
+    img:np.ndarray = threshold
     del ret
 
     # Guardamos la imagen
     cv2.imwrite(str(result_image_path/image_name.replace('.jpg', '.png')),img)
 
     # Prueba -- Borrar
-    plt.subplot(221), plt.imshow(image), plt.title('ER. Imagen Inicial')
-    plt.subplot(222), plt.imshow(max_color_neg_img), plt.title('Negativo Maximo de La imagen')
-    plt.subplot(223), plt.imshow(bmp_grayscale*255), plt.title('Imagen Binarizada')
-    plt.subplot(224), plt.imshow(img), plt.title('Imagen Utilizando Filtrado de Frec')
-    plt.show()
+    # plt.subplot(221), plt.imshow(image), plt.title('ER. Imagen Inicial')
+    # plt.subplot(222), plt.imshow(max_color_neg_img), plt.title('Negativo Maximo de La imagen')
+    # plt.subplot(223), plt.imshow(bmp_grayscale*255), plt.title('Imagen Binarizada')
+    # plt.subplot(224), plt.imshow(img), plt.title('Imagen Utilizando Filtrado de Frec')
+    # plt.show()
+
+    print(img.shape, bw2.shape)
 
     return result_image_path, img
 
@@ -59,11 +61,11 @@ def get_contours(grayscale_img:np.ndarray) -> np.ndarray:
     spectrum_image_1d = get_spectrum(f_shift_image_1d)
     
     # Mostrar el espectro
-    plt.subplot(2,2,1), plt.imshow(grayscale_img), plt.title('Imagen para Contornos')
-    plt.subplot(2,2,2), plt.imshow(grayscale_img), plt.title('Imagen para Contornos')
-    plt.subplot(2,2,3), plt.imshow(spectrum_image), plt.title('Espectro a Aplicar')
-    plt.subplot(2,2,4), plt.plot(spectrum_image_1d), plt.title('Espectro 1D a aplicar')
-    plt.show()
+    # plt.subplot(2,2,1), plt.imshow(grayscale_img), plt.title('Imagen para Contornos')
+    # plt.subplot(2,2,2), plt.imshow(grayscale_img), plt.title('Imagen para Contornos')
+    # plt.subplot(2,2,3), plt.imshow(spectrum_image), plt.title('Espectro a Aplicar')
+    # plt.subplot(2,2,4), plt.plot(spectrum_image_1d), plt.title('Espectro 1D a aplicar')
+    # plt.show()
 
     # Crear filtro unidimensional para la imagen
     frec_filter = get_2d_filter(grayscale_img)
@@ -82,10 +84,10 @@ def get_contours(grayscale_img:np.ndarray) -> np.ndarray:
     real_ans:np.ndarray = np.real(complex_ans)
     ans = real_ans*255/real_ans.max()
 
-    # Mostrar el espectro
-    plt.subplot(2,2,3), plt.imshow(spectrum_ans), plt.title('Spectrum applied')
-    plt.subplot(2,2,4), plt.imshow(ans), plt.title('Final Image')
-    plt.show()
+    # # Mostrar el espectro
+    # plt.subplot(2,2,3), plt.imshow(spectrum_ans), plt.title('Spectrum applied')
+    # plt.subplot(2,2,4), plt.imshow(ans), plt.title('Final Image')
+    # plt.show()
 
     print(ans.max())
 
@@ -105,9 +107,9 @@ def get_2d_filter(img:np.ndarray) -> np.ndarray:
 
     kernel_spectrum = get_spectrum(f_shift_kernel)
 
-    plt.subplot(121), plt.imshow(img), plt.title('Main Image')
-    plt.subplot(122), plt.imshow(kernel_spectrum), plt.title('2D Filter')
-    plt.show()
+    # plt.subplot(121), plt.imshow(img), plt.title('Main Image')
+    # plt.subplot(122), plt.imshow(kernel_spectrum), plt.title('2D Filter')
+    # plt.show()
 
     return f_shift_kernel
 
@@ -124,9 +126,9 @@ def get_1d_filter(img:np.ndarray) -> np.ndarray:
 
     kernel_spectrum = get_spectrum(f_shift_kernel)
 
-    plt.subplot(121), plt.imshow(img), plt.title('Main Image')
-    plt.subplot(122), plt.imshow(kernel_spectrum), plt.title('2D Filter')
-    plt.show()
+    # plt.subplot(121), plt.imshow(img), plt.title('Main Image')
+    # plt.subplot(122), plt.imshow(kernel_spectrum), plt.title('2D Filter')
+    # plt.show()
 
     return f_shift_kernel
 

@@ -4,16 +4,21 @@ from functools import reduce
 
 from matplotlib import pyplot as plt
 import numpy as np
+from numpy.lib import imag
 import scipy as sp
 import cv2
 
-def segmentation(image_path:Path, image:np.ndarray, results_path: Path = Path().parent / 'results' / 'segmentation'):
+def segmentation(image_path:Path, image_tresh:np.ndarray, results_path: Path = Path().parent / 'results' / 'segmentation'):
     image_name = image_path.name
     result_image_path = results_path / image_name.replace('.jpg', '')
     if not result_image_path.exists(): mkdir(result_image_path)
 
+    plt.plot(), plt.imshow(image_tresh), plt.title('Segmentation img.')
+    plt.show()
+
     # Se generan las cajas para identificar las zonas de interes
-    contours, hierarchy = cv2.findContours(image/255, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    threshold = cv2.convertScaleAbs(image_tresh/255)
+    contours, hierarchy = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     del hierarchy
 
     # Calcular rectangulo mas grande
@@ -31,11 +36,12 @@ def segmentation(image_path:Path, image:np.ndarray, results_path: Path = Path().
 
     # Aplicar las mascaras a la imagen
     get_masked_image = lambda img, box: img[box[1] : box[1]+box[3], box[0] : box[0]+box[2]]
-    masked_images_list = [get_masked_image(image, box) for box in valid_boxes]
+    masked_images_list = [get_masked_image(threshold, box) for box in valid_boxes]
 
     # Guardo las imagenes en una carpeta con el nombre del archivo
     for num, img in enumerate(masked_images_list):
-        cv2.imwrite(str(result_image_path/image_name.replace('.jpg', f'_{num+1}.png')),img*255)
+        print(image_name, img.max())
+        cv2.imwrite(str(result_image_path/f'{image_name}_{num+1}.png'),img*255)
         plt.subplot(1, len(masked_images_list), num+1), plt.imshow(img)
     plt.show()
 
