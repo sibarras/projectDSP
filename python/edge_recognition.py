@@ -12,26 +12,46 @@ def edge_recognition(image_path:Path, image:np.ndarray, results_path: Path = Pat
     # Crear un negativo con los colores maximos de la imagen
     max_color_neg_img = np.array([[1-max(rgb) for rgb in img_row] for img_row in image/255])
 
+    cv2.imshow('Negative Image', max_color_neg_img)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+
     # Guardar como bmp para binarizar la imagen
     bmp_path = result_image_path / image_name.replace('.jpeg', '.bmp')
     cv2.imwrite(str(bmp_path), max_color_neg_img*255)
     bmp_image = cv2.imread(str(bmp_path))
     remove(bmp_path)
 
+    cv2.imshow('Binarized Image', bmp_image)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+
     # plt.plot(), plt.imshow(bmp_image), plt.title('Canny'), plt.show()
 
     # Aplicacion de laplaciano para extraccion de bordes / No esta siendo utilizado
     bw2:np.ndarray = cv2.Canny(bmp_image, 100, 200)
+
+   
     # plt.plot(), plt.imshow(bw2), plt.title('Canny'), plt.show()
 
     # Obtener Bordes de la imagen
     bmp_grayscale = sum(bmp_image[:,:,i] for i in range(3))/3 
+    
+    plt.plot(), plt.imshow(bmp_grayscale), plt.title('Grayscale Img'), plt.show()
+    
     spec_img = get_contours(bmp_grayscale)
+
+    plt.subplot(3,2,(5, 6)), plt.imshow(bw2), plt.title('Image Filtered')
+    plt.show()
 
     # Binarizamos para tener el contorno de la imagen
     # _, threshold = cv2.threshold(bw2, 0, 255, 0)
     _, threshold = cv2.threshold(bw2, 50, 255, 0)
     img:np.ndarray = threshold
+
+    cv2.imshow('Final Image', img)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
 
     # Guardamos la imagen
     cv2.imwrite(str(result_image_path/image_name.replace('.jpeg', '.png')),img)
@@ -60,13 +80,6 @@ def get_contours(grayscale_img:np.ndarray) -> np.ndarray:
     spectrum_image:np.ndarray = get_spectrum(f_shift_image)
     spectrum_image_1d = get_spectrum(f_shift_image_1d)
     
-    # Mostrar el espectro
-    # plt.subplot(2,2,1), plt.imshow(grayscale_img), plt.title('Imagen para Contornos')
-    # plt.subplot(2,2,2), plt.imshow(grayscale_img), plt.title('Imagen para Contornos')
-    # plt.subplot(2,2,3), plt.imshow(spectrum_image), plt.title('Espectro a Aplicar')
-    # plt.subplot(2,2,4), plt.plot(spectrum_image_1d), plt.title('Espectro 1D a aplicar')
-    # plt.show()
-
     # Crear filtro bidimensional para la imagen
     frec_filter = get_2d_filter(grayscale_img)
     
@@ -83,6 +96,12 @@ def get_contours(grayscale_img:np.ndarray) -> np.ndarray:
 
     real_ans:np.ndarray = np.real(complex_ans)
     ans = real_ans*255/real_ans.max()
+
+    # Mostrar el espectro
+    plt.subplot(3,2,1), plt.imshow(grayscale_img), plt.title('Initial Image')
+    plt.subplot(3,2,2), plt.imshow(spectrum_image), plt.title(' Image Spectre')
+    plt.subplot(3,2,3), plt.imshow(frec_filter), plt.title('Filter')
+    plt.subplot(3,2,4), plt.imshow(spectrum_ans), plt.title('Spectre Filtered')
 
     # # Mostrar el espectro
     # plt.subplot(2,2,3), plt.imshow(spectrum_ans), plt.title('Spectrum applied')
@@ -114,7 +133,7 @@ def get_2d_filter(img:np.ndarray) -> np.ndarray:
     # plt.subplot(122), plt.imshow(kernel_spectrum), plt.title('2D Filter')
     # plt.show()
 
-    return f_shift_kernel
+    return filter_kernel_g
 
 def get_1d_filter(img:np.ndarray) -> np.ndarray:
     xf, yf = img.flatten().shape

@@ -14,18 +14,19 @@ def segmentation(image_path:Path, image_tresh:np.ndarray, results_path: Path = P
     if not result_image_path.exists(): mkdir(result_image_path)
 
     # Se generan las cajas para identificar las zonas de interes
-    plt.subplot(1,2,1), plt.imshow(image_tresh), plt.title('seg')
+    plt.subplot(1,2,1), plt.imshow(image_tresh), plt.title('Initial')
     image_to_tresh = cv2.dilate(image_tresh[:],None,iterations=2)
     
-    plt.subplot(1,2,2), plt.imshow(image_to_tresh), plt.title('seg')
-    plt.show()
+    plt.subplot(1,2,2), plt.imshow(image_to_tresh), plt.title('Dilated'), plt.show()
 
     threshold = cv2.convertScaleAbs(image_to_tresh/255)
-    contours, hierarchy = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-    del hierarchy
 
-    # cv2.drawContours(threshold, contours, -1, (0, 255, 0), 0.5)
-    # plt.plot(), plt.imshow(image_tresh), plt.title('seg'), plt.show()
+    plt.plot(), plt.imshow(image_to_tresh), plt.title('With Threshold'), plt.show()
+
+    contours, _ = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    # im = cv2.drawContours(image_tresh.copy(), contours, -1, (0, 255, 0), 0.5)
+    # plt.plot(), plt.imshow(im), plt.title('Contours'), plt.show()
 
     # Calcular rectangulo mas grande
     threshold:np.ndarray
@@ -46,6 +47,9 @@ def segmentation(image_path:Path, image_tresh:np.ndarray, results_path: Path = P
     valid_boxes.sort(key=x_pos)
     print(valid_boxes)
 
+    # im = cv2.drawContours(image_tresh.copy(), valid_boxes, -1, (0, 255, 0), 0.5)
+    # plt.plot(), plt.imshow(im), plt.title('Contours'), plt.show()
+
     # Aplicar las mascaras a la imagen
     get_masked_image = lambda img, box: img[box[1] : box[1]+box[3], box[0] : box[0]+box[2]]
     masked_images_list = [get_masked_image(image_tresh, box) for box in valid_boxes]
@@ -53,7 +57,8 @@ def segmentation(image_path:Path, image_tresh:np.ndarray, results_path: Path = P
 
     # Guardo las imagenes en una carpeta con el nombre del archivo
     for num, img in enumerate(masked_images_list):
-        cv2.imwrite(str(result_image_path/f'{image_name}_{num+1}.png'),img*255)
+        img = cv2.convertScaleAbs(img)
+        cv2.imwrite(str(result_image_path/f'{image_name}_{num+1}.png'),img)
         plt.subplot(1, len(masked_images_list), num+1), plt.imshow(img)
     plt.suptitle("Segmentation"), plt.show()
 

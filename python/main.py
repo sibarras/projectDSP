@@ -12,7 +12,7 @@ def run() -> None:
         processed_img_dir, processed_img = pre_process_image(image_path)
         edge_img_dir, edge_img = edge_recognition(processed_img_dir, processed_img)
         segmentated_img_folder, masked_images = segmentation(edge_img_dir, edge_img)
-        result:int = classification(segmentated_img_folder, masked_images)
+        result:int = classification(segmentated_img_folder, masked_images, image_path)
         print(result)
 
     return None
