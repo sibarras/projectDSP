@@ -4,8 +4,6 @@ from os import makedirs
 import pytesseract
 import cv2
 
-
-
 def classification(image_path: Path, images_list:np.ndarray, first_image, results_path: Path = Path().parent / 'results' / 'classification') -> int:
     image_name = image_path.name.replace('.jpg', '')
     results_image_path = results_path/image_name
