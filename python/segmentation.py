@@ -13,36 +13,48 @@ def segmentation(image_path:Path, image_tresh:np.ndarray, results_path: Path = P
     result_image_path = results_path / image_name.replace('.jpg', '')
     if not result_image_path.exists(): mkdir(result_image_path)
 
-    plt.plot(), plt.imshow(image_tresh), plt.title('Segmentation img.')
+    # Se generan las cajas para identificar las zonas de interes
+    plt.subplot(1,2,1), plt.imshow(image_tresh), plt.title('seg')
+    image_to_tresh = cv2.dilate(image_tresh[:],None,iterations=2)
+    
+    plt.subplot(1,2,2), plt.imshow(image_to_tresh), plt.title('seg')
     plt.show()
 
-    # Se generan las cajas para identificar las zonas de interes
-    threshold = cv2.convertScaleAbs(image_tresh/255)
+    threshold = cv2.convertScaleAbs(image_to_tresh/255)
     contours, hierarchy = cv2.findContours(threshold, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
     del hierarchy
+
+    # cv2.drawContours(threshold, contours, -1, (0, 255, 0), 0.5)
+    # plt.plot(), plt.imshow(image_tresh), plt.title('seg'), plt.show()
 
     # Calcular rectangulo mas grande
     threshold:np.ndarray
     L, A = threshold.shape
     boxes = np.array([cv2.boundingRect(contours[i]) for i in range(len(contours))])
-    
+    boxes = list(filter(lambda box: len(box)==4, boxes))
+
     # Filtro de las cajas, que deben cumplir la condicion especifica
     valid_box_condition = lambda box: box[3]>0.4*L and box[3]<=0.7*L and box[2] > 0.08*A and box[2] <= 0.17*A
     valid_boxes = np.array(list(filter(valid_box_condition, boxes)))
     
     # Se eliminan duplicados haciendo un set y selecciono los 6 primeros
     valid_boxes = np.array(list({tuple(box) for box in valid_boxes}))
-    valid_boxes = valid_boxes[:6]
+    valid_boxes:list = list(valid_boxes)
+
+    # Ordenar las cajas por su posicion en la imagen
+    x_pos = lambda box: box[0]
+    valid_boxes.sort(key=x_pos)
+    print(valid_boxes)
 
     # Aplicar las mascaras a la imagen
     get_masked_image = lambda img, box: img[box[1] : box[1]+box[3], box[0] : box[0]+box[2]]
-    masked_images_list = [get_masked_image(threshold, box) for box in valid_boxes]
+    masked_images_list = [get_masked_image(image_tresh, box) for box in valid_boxes]
+    
 
     # Guardo las imagenes en una carpeta con el nombre del archivo
     for num, img in enumerate(masked_images_list):
-        print(image_name, img.max())
         cv2.imwrite(str(result_image_path/f'{image_name}_{num+1}.png'),img*255)
         plt.subplot(1, len(masked_images_list), num+1), plt.imshow(img)
-    plt.show()
+    plt.suptitle("Segmentation"), plt.show()
 
     return result_image_path, masked_images_list

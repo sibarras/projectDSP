@@ -6,33 +6,35 @@ import cv2
 
 def edge_recognition(image_path:Path, image:np.ndarray, results_path: Path = Path().parent.absolute() / 'results' / 'edge_recognition'):
     image_name = image_path.name
-    result_image_path = results_path / image_name.replace('.jpg', '')
+    result_image_path = results_path / image_name.replace('.jpeg', '')
     if not result_image_path.exists(): makedirs(result_image_path)
     
     # Crear un negativo con los colores maximos de la imagen
     max_color_neg_img = np.array([[1-max(rgb) for rgb in img_row] for img_row in image/255])
 
     # Guardar como bmp para binarizar la imagen
-    bmp_path = result_image_path / image_name.replace('.jpg', '.bmp')
-    cv2.imwrite(str(bmp_path), max_color_neg_img)
+    bmp_path = result_image_path / image_name.replace('.jpeg', '.bmp')
+    cv2.imwrite(str(bmp_path), max_color_neg_img*255)
     bmp_image = cv2.imread(str(bmp_path))
     remove(bmp_path)
 
-    # Aplicacion de laplaciano para extraccion de bordes
-    bw2:np.ndarray = cv2.Canny(bmp_image, 0.01, 0.6)
+    # plt.plot(), plt.imshow(bmp_image), plt.title('Canny'), plt.show()
+
+    # Aplicacion de laplaciano para extraccion de bordes / No esta siendo utilizado
+    bw2:np.ndarray = cv2.Canny(bmp_image, 100, 200)
+    # plt.plot(), plt.imshow(bw2), plt.title('Canny'), plt.show()
 
     # Obtener Bordes de la imagen
     bmp_grayscale = sum(bmp_image[:,:,i] for i in range(3))/3 
     spec_img = get_contours(bmp_grayscale)
-    img = bw2
 
     # Binarizamos para tener el contorno de la imagen
-    ret, threshold = cv2.threshold(spec_img, 50, 255, 0)
+    # _, threshold = cv2.threshold(bw2, 0, 255, 0)
+    _, threshold = cv2.threshold(bw2, 50, 255, 0)
     img:np.ndarray = threshold
-    del ret
 
     # Guardamos la imagen
-    cv2.imwrite(str(result_image_path/image_name.replace('.jpg', '.png')),img)
+    cv2.imwrite(str(result_image_path/image_name.replace('.jpeg', '.png')),img)
 
     # Prueba -- Borrar
     # plt.subplot(221), plt.imshow(image), plt.title('ER. Imagen Inicial')
@@ -40,8 +42,6 @@ def edge_recognition(image_path:Path, image:np.ndarray, results_path: Path = Pat
     # plt.subplot(223), plt.imshow(bmp_grayscale*255), plt.title('Imagen Binarizada')
     # plt.subplot(224), plt.imshow(img), plt.title('Imagen Utilizando Filtrado de Frec')
     # plt.show()
-
-    print(img.shape, bw2.shape)
 
     return result_image_path, img
 
@@ -67,7 +67,7 @@ def get_contours(grayscale_img:np.ndarray) -> np.ndarray:
     # plt.subplot(2,2,4), plt.plot(spectrum_image_1d), plt.title('Espectro 1D a aplicar')
     # plt.show()
 
-    # Crear filtro unidimensional para la imagen
+    # Crear filtro bidimensional para la imagen
     frec_filter = get_2d_filter(grayscale_img)
     
     # Realizar la multiplicacion
@@ -89,18 +89,21 @@ def get_contours(grayscale_img:np.ndarray) -> np.ndarray:
     # plt.subplot(2,2,4), plt.imshow(ans), plt.title('Final Image')
     # plt.show()
 
-    print(ans.max())
-
     return ans
 
 def get_2d_filter(img:np.ndarray) -> np.ndarray:
     xf, yf = img.shape
     D = lambda x, y : ((x-xf/2)**2 + (y-yf/2)**2)**0.5
-    D0 = 40
-    high_bandstop_butterford = lambda x,y: 1 - 1/(1+(D(x,y)/D0)**(2*20))
+    D0 = 10
 
-    filter_kernel = np.array([[high_bandstop_butterford(x,y) for y in range(yf)] for x in range(xf)])
-    filter_kernel = filter_kernel * 1/filter_kernel.max()
+    highpass_butterford = lambda x,y: 1 - 1/(1+(D(x,y)/D0)**(2*50))
+    filter_kernel_b = np.array([[highpass_butterford(x,y) for y in range(yf)] for x in range(xf)])
+    
+    highpass_gaussian = lambda x,y: 1-np.exp(-D(x,y)**2/(2*D0**2))
+    filter_kernel_g = np.array([[highpass_gaussian(x,y) for y in range(yf)] for x in range(xf)])
+    
+
+    filter_kernel = filter_kernel_g * 1/filter_kernel_g.max()
 
     f_kernel = np.fft.fft2(filter_kernel)
     f_shift_kernel = np.fft.fft2(f_kernel)
@@ -116,7 +119,7 @@ def get_2d_filter(img:np.ndarray) -> np.ndarray:
 def get_1d_filter(img:np.ndarray) -> np.ndarray:
     xf, yf = img.flatten().shape
     D = lambda x, y : ((x-xf/2)**2 + (y-yf/2)**2)**0.5
-    D0 = 20
+    D0 = 10
     high_bandstop_butterford = lambda x,y: 1 - 1/(1+(D(x,y)/D0)**(2*20))
 
     filter_kernel = np.array([[high_bandstop_butterford(x,y) for y in range(yf)] for x in range(xf)])
